@@ -26,8 +26,8 @@ export default function Navbar() {
           style={{ animationDelay: "0ms" }}
         >
           <img src={noyMark} alt="NOY Yapı logosu" width={600} height={427} className="h-8 w-auto sm:h-9" />
-          <div className="rule-v hidden h-6 sm:block" />
-          <span className="font-mono-label hidden text-[11px] tracking-[0.28em] text-gold-dim sm:block">
+          <div className="rule-v h-6" />
+          <span className="font-mono-label text-[9px] tracking-[0.15em] text-gold-dim sm:text-[11px] sm:tracking-[0.28em]">
             NAİF OĞULLARI YAPI
           </span>
         </a>

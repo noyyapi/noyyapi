@@ -6,6 +6,12 @@ interface VillaVideoProps {
   progress: number;
 }
 
+// Scrubbing currentTime on every animation frame (~60/s) forces the decoder
+// to seek-and-decode that often, which is cheap on desktop but stutters badly
+// on phones. Capping it to ~15 seeks/s is still visually smooth for this slow
+// build animation and keeps mobile decode load low.
+const SEEK_INTERVAL_MS = 1000 / 15;
+
 /**
  * Scrubs the villa-build video frame-by-frame against scroll progress,
  * instead of letting it play: same "scroll drives the drawing" feel the
@@ -14,6 +20,7 @@ interface VillaVideoProps {
 export default function VillaVideo({ progress }: VillaVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
+  const lastSeekAtRef = useRef(0);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -27,9 +34,12 @@ export default function VillaVideo({ progress }: VillaVideoProps) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !duration) return;
+    const now = performance.now();
+    if (now - lastSeekAtRef.current < SEEK_INTERVAL_MS) return;
     const target = progress * duration;
-    if (Math.abs(video.currentTime - target) > 0.01) {
+    if (Math.abs(video.currentTime - target) > 0.03) {
       video.currentTime = target;
+      lastSeekAtRef.current = now;
     }
   }, [progress, duration]);
 
