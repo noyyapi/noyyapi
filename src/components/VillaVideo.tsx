@@ -7,10 +7,11 @@ interface VillaVideoProps {
 }
 
 // Scrubbing currentTime on every animation frame (~60/s) forces the decoder
-// to seek-and-decode that often, which is cheap on desktop but stutters badly
-// on phones. Capping it to ~15 seeks/s is still visually smooth for this slow
-// build animation and keeps mobile decode load low.
-const SEEK_INTERVAL_MS = 1000 / 15;
+// to seek-and-decode that often. The source video is encoded all-intra
+// (every frame a keyframe) specifically so each seek is a cheap direct
+// decode instead of walking a GOP chain, but capping the rate still avoids
+// firing more seeks than the eye can tell apart.
+const SEEK_INTERVAL_MS = 1000 / 24;
 
 /**
  * Scrubs the villa-build video frame-by-frame against scroll progress,
