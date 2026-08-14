@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Inter Tight", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --color-ink: #0c0f13;
+  --color-ink-soft: #12161c;
+  --color-ink-line: #22262d;
+  --color-gold: #c9a463;
+  --color-gold-light: #e8d6a8;
+  --color-gold-dim: #8a7449;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: #fff;
+  font-family: "Inter Tight", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: #0c0f13;
+}
+
+.font-mono-label {
+  font-family: "IBM Plex Mono", monospace;
+}
+
+/* Drawn rule dividers — the "traced on the same board" signature */
+.rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201, 164, 99, 0.75), transparent);
+  transform-origin: left;
+}
+
+.rule-v {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(201, 164, 99, 0.55), transparent);
+}
+
+.dim-label {
+  color: #c9a463;
+  font-family: "IBM Plex Mono", monospace;
+  letter-spacing: 0.28em;
+}
+
+/* Plain gold emphasis word inside a heading — no extra tracking. */
+.accent-word {
+  color: var(--color-gold);
+}
+
+/* Reusable liquid-glass surface */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+@keyframes blurFadeUp {
+  from {
+    opacity: 0;
+    filter: blur(20px);
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.animate-blur-fade-up {
+  animation: blurFadeUp 1.1s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes drawLine {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-draw-line {
+  animation: drawLine 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes bounceDown {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-down {
+  animation: bounceDown 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blur-fade-up,
+  .animate-draw-line,
+  .animate-bounce-down {
+    animation: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
