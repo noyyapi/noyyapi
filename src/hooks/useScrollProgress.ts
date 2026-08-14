@@ -3,20 +3,21 @@ import { clamp } from "../lib/motion";
 
 /**
  * Tracks how far the viewer has scrolled through `containerRef` as a 0→1
- * value, damped every frame like a scrubbed video playhead easing toward
- * its target time. The rAF loop is what keeps updates paced to the
- * display's refresh rate instead of firing once per raw scroll event
- * (which on some phones fire faster than the page can usefully re-render);
- * removing it entirely made mobile worse, not better. What actually caused
- * the post-flick stutter was the *slow* 10%-per-frame easing: after a fast
- * flick the raw target jumps far away and it took ~70 frames (over a
- * second) of continuous re-rendering to catch up, fighting the browser's
- * own momentum-scroll animation. Touch devices now use a much faster
- * catch-up factor (still rAF-paced, just converges in ~6 frames instead of
- * ~70) since native touch scrolling already supplies its own momentum feel
- * and doesn't need the slow cinematic ease desktop wheel input benefits
- * from. Falls back to an un-damped value when the user prefers reduced
- * motion.
+ * value. Renders are always paced through a rAF loop rather than fired
+ * directly off the native `scroll` event — that keeps updates capped to
+ * the display's refresh rate instead of however often (and however
+ * irregularly) the browser happens to dispatch scroll events, which is
+ * what made an earlier direct-from-scroll-event version feel worse, not
+ * better, on phones.
+ *
+ * On top of that pacing, desktop mouse/trackpad input gets a gentle
+ * exponential ease (10%/frame) toward the raw scroll value for a smooth,
+ * cinematic feel — wheel input arrives in coarse discrete steps, so a
+ * little inertia reads as polish. Touch devices mirror the raw value
+ * every frame with no easing at all: touchscreens already track the
+ * finger with zero added latency natively, and any extra smoothing on
+ * top of that reads as constant lag ("heavy" scrolling) rather than
+ * polish, even when it converges quickly.
  */
 export function useScrollProgress(containerRef: React.RefObject<HTMLElement | null>) {
   const [progress, setProgress] = useState(0);
@@ -26,7 +27,7 @@ export function useScrollProgress(containerRef: React.RefObject<HTMLElement | nu
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
-    const easeFactor = isCoarsePointer ? 0.55 : 0.1;
+    const instant = prefersReduced || isCoarsePointer;
 
     const computeRaw = () => {
       const el = containerRef.current;
@@ -39,20 +40,18 @@ export function useScrollProgress(containerRef: React.RefObject<HTMLElement | nu
 
     const onScroll = () => {
       rawRef.current = computeRaw();
-      if (prefersReduced) {
-        dampedRef.current = rawRef.current;
-        setProgress(rawRef.current);
-      }
     };
 
     let rafId: number;
     const tick = () => {
-      if (!prefersReduced) {
+      if (instant) {
+        dampedRef.current = rawRef.current;
+      } else {
         const diff = rawRef.current - dampedRef.current;
-        dampedRef.current += diff * easeFactor;
+        dampedRef.current += diff * 0.1;
         if (Math.abs(diff) < 0.0005) dampedRef.current = rawRef.current;
-        setProgress(dampedRef.current);
       }
+      setProgress(dampedRef.current);
       rafId = requestAnimationFrame(tick);
     };
 
