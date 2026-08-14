@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ArrowRight, ChevronsDown, PencilRuler, PhoneCall, Ruler, Sparkles } from "lucide-react";
 import { useScrollProgress } from "../hooks/useScrollProgress";
 import { BEATS } from "../lib/beats";
 import VillaVideo from "./VillaVideo";
+import VillaFrames from "./VillaFrames";
 import { ReadabilityScrim } from "./StageOverlays";
 import ScrollRail from "./ScrollRail";
 import BeatBlock from "./BeatBlock";
@@ -18,6 +19,10 @@ function railLabel(progress: number) {
 export default function ScrollStory() {
   const containerRef = useRef<HTMLDivElement>(null);
   const progress = useScrollProgress(containerRef);
+  // Touch devices scrub a preloaded JPEG sequence instead of seeking a
+  // compressed video: swapping an already-loaded <img> src is cheap (no
+  // decode chain), which is what makes scroll-scrubbing viable on phones.
+  const [useFrameSequence] = useState(() => window.matchMedia("(pointer: coarse)").matches);
 
   // Switch points sit at the midpoint of each gap between beats so that
   // exactly one beat is ever active at a time — otherwise two captions
@@ -35,7 +40,7 @@ export default function ScrollStory() {
   return (
     <section id="top" ref={containerRef} className="relative h-[360vh] md:h-[500vh]">
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        <VillaVideo progress={progress} />
+        {useFrameSequence ? <VillaFrames progress={progress} /> : <VillaVideo progress={progress} />}
         <ReadabilityScrim />
 
         {/* Hero beat */}
