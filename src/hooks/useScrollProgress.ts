@@ -5,7 +5,10 @@ import { clamp } from "../lib/motion";
  * Tracks how far the viewer has scrolled through `containerRef` as a 0→1
  * value, damped every frame like a scrubbed video playhead easing toward
  * its target time. Falls back to an un-damped value when the user prefers
- * reduced motion.
+ * reduced motion, or on touch devices: touch scrolling already has its own
+ * native momentum/deceleration, so the extra JS easing on top just keeps
+ * re-rendering for ~a second after every flick, fighting the browser's own
+ * scroll animation and reading as stutter on phones.
  */
 export function useScrollProgress(containerRef: React.RefObject<HTMLElement | null>) {
   const [progress, setProgress] = useState(0);
@@ -14,6 +17,8 @@ export function useScrollProgress(containerRef: React.RefObject<HTMLElement | nu
 
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+    const skipDamping = prefersReduced || isCoarsePointer;
 
     const computeRaw = () => {
       const el = containerRef.current;
@@ -26,7 +31,7 @@ export function useScrollProgress(containerRef: React.RefObject<HTMLElement | nu
 
     const onScroll = () => {
       rawRef.current = computeRaw();
-      if (prefersReduced) {
+      if (skipDamping) {
         dampedRef.current = rawRef.current;
         setProgress(rawRef.current);
       }
@@ -34,24 +39,22 @@ export function useScrollProgress(containerRef: React.RefObject<HTMLElement | nu
 
     let rafId: number;
     const tick = () => {
-      if (!prefersReduced) {
-        const diff = rawRef.current - dampedRef.current;
-        dampedRef.current += diff * 0.1;
-        if (Math.abs(diff) < 0.0005) dampedRef.current = rawRef.current;
-        setProgress(dampedRef.current);
-      }
+      const diff = rawRef.current - dampedRef.current;
+      dampedRef.current += diff * 0.1;
+      if (Math.abs(diff) < 0.0005) dampedRef.current = rawRef.current;
+      setProgress(dampedRef.current);
       rafId = requestAnimationFrame(tick);
     };
 
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
-    rafId = requestAnimationFrame(tick);
+    if (!skipDamping) rafId = requestAnimationFrame(tick);
 
     return () => {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
-      cancelAnimationFrame(rafId);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [containerRef]);
 
